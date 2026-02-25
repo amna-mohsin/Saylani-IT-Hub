@@ -166,10 +166,5 @@ This project is licensed under a **Custom MIT License with Attribution**.
 
 **Made with ❤️ for the Saylani IT Community**
 
-[⬆ Back to Top](https://www.google.com/search?q=%23-saylani-it-hub)
-
 </div>
 
-```
-
-Would you like me to help you write the `profiles` table SQL query for your Supabase dashboard to make sure it matches your code exactly?
