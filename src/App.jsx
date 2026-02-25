@@ -12,7 +12,9 @@ import Dashboard from './pages/Dashboard';
 import LostFound from './pages/LostFound';
 import Complaints from './pages/Complaints';
 import Volunteer from './pages/Volunteer';
+import Notes from './pages/Notes';
 import Notifications from './pages/Notifications';
+import Settings from './pages/Settings';
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
@@ -46,9 +48,19 @@ function AppContent() {
             <Volunteer />
           </PrivateRoute>
         } />
+        <Route path="/notes" element={
+          <PrivateRoute>
+            <Notes />
+          </PrivateRoute>
+        } />
         <Route path="/notifications" element={
           <PrivateRoute>
             <Notifications />
+          </PrivateRoute>
+        } />
+        <Route path="/settings" element={
+          <PrivateRoute>
+            <Settings />
           </PrivateRoute>
         } />
       </Routes>

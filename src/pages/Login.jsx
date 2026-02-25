@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Eye, EyeOff, Mail, Lock, Sun, Moon, 
-  ArrowRight, Shield, User, Sparkles 
+import {
+  Eye, EyeOff, Mail, Lock, Sun, Moon,
+  ArrowRight, Shield, User, Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -60,7 +60,7 @@ const Login = () => {
       </motion.button>
 
       {/* Main Container */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-6xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden"
@@ -86,16 +86,22 @@ const Login = () => {
               className="absolute -bottom-20 -left-20 w-64 h-64 bg-white/10 rounded-full"
             />
 
-            <div className="relative z-10">
-              <motion.div
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center space-x-3 mb-8"
-              >
-                <img src="/icons/logo.svg" alt="Saylani" className="w-12 h-12 invert" />
-                <span className="text-white font-bold text-xl">Saylani Portal</span>
-              </motion.div>
+<div className="relative z-10">
+  <motion.div
+    initial={{ x: -50, opacity: 0 }}
+    animate={{ x: 0, opacity: 1 }}
+    transition={{ delay: 0.2 }}
+    className="flex items-center space-x-3 mb-8"
+  >
+    <div className="flex items-center justify-center w-16 h-16 rounded-full border-2 border-white/30 bg-white shadow-xl overflow-hidden">
+      <img
+        src="/icons/favicon.png"
+        alt="Saylani"
+        className="w-12 h-12 object-contain p-1" 
+      />
+    </div>
+    <span className="text-white font-bold text-xl">Saylani Portal</span>
+  </motion.div>
 
               <motion.div
                 initial={{ y: 20, opacity: 0 }}

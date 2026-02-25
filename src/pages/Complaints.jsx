@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 import { 
   AlertCircle, Clock, CheckCircle, XCircle, 
   Wifi, Zap, Droplets, Wrench, Search, Plus,
   MapPin, User, Calendar, Filter, Grid, List,
   MoreVertical, Phone, Mail, Loader, ChevronDown,
-  ChevronUp, Trash2, Camera, X, Package
+  ChevronUp, Trash2, Camera, X, Package, Edit,
+  Eye, Share2, Download, HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../components/Layout';
@@ -15,14 +15,30 @@ import toast from 'react-hot-toast';
 // Priority Badge
 const PriorityBadge = ({ priority }) => {
   const config = {
-    low: { color: 'bg-green-100 text-green-800', label: 'Low Priority', icon: Clock },
-    medium: { color: 'bg-yellow-100 text-yellow-800', label: 'Medium Priority', icon: Clock },
-    high: { color: 'bg-red-100 text-red-800', label: 'High Priority', icon: AlertCircle }
+    low: { 
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', 
+      label: 'Low Priority', 
+      icon: Clock,
+      bg: 'bg-green-500'
+    },
+    medium: { 
+      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', 
+      label: 'Medium Priority', 
+      icon: AlertCircle,
+      bg: 'bg-yellow-500'
+    },
+    high: { 
+      color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', 
+      label: 'High Priority', 
+      icon: AlertCircle,
+      bg: 'bg-red-500'
+    }
   };
-  const { color, label, icon: Icon } = config[priority] || config.medium;
+  const { color, label, icon: Icon, bg } = config[priority] || config.medium;
+  
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${color} flex items-center`}>
-      <Icon className="w-3 h-3 mr-1" />
+    <span className={`px-3 py-1 rounded-full text-xs font-medium ${color} flex items-center shadow-sm`}>
+      <span className={`w-2 h-2 rounded-full ${bg} mr-1.5 animate-pulse`} />
       {label}
     </span>
   );
@@ -31,16 +47,40 @@ const PriorityBadge = ({ priority }) => {
 // Status Badge
 const StatusBadge = ({ status }) => {
   const config = {
-    submitted: { icon: Clock, text: 'Submitted', color: 'text-yellow-600', bg: 'bg-yellow-100' },
-    'in-progress': { icon: Clock, text: 'In Progress', color: 'text-blue-600', bg: 'bg-blue-100' },
-    resolved: { icon: CheckCircle, text: 'Resolved', color: 'text-green-600', bg: 'bg-green-100' },
-    rejected: { icon: XCircle, text: 'Rejected', color: 'text-red-600', bg: 'bg-red-100' }
+    submitted: { 
+      icon: Clock, 
+      text: 'Submitted', 
+      color: 'text-yellow-600 dark:text-yellow-400', 
+      bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+      border: 'border-yellow-200 dark:border-yellow-800'
+    },
+    'in-progress': { 
+      icon: Clock, 
+      text: 'In Progress', 
+      color: 'text-blue-600 dark:text-blue-400', 
+      bg: 'bg-blue-100 dark:bg-blue-900/30',
+      border: 'border-blue-200 dark:border-blue-800'
+    },
+    resolved: { 
+      icon: CheckCircle, 
+      text: 'Resolved', 
+      color: 'text-green-600 dark:text-green-400', 
+      bg: 'bg-green-100 dark:bg-green-900/30',
+      border: 'border-green-200 dark:border-green-800'
+    },
+    rejected: { 
+      icon: XCircle, 
+      text: 'Rejected', 
+      color: 'text-red-600 dark:text-red-400', 
+      bg: 'bg-red-100 dark:bg-red-900/30',
+      border: 'border-red-200 dark:border-red-800'
+    }
   };
-  const { icon: Icon, text, color, bg } = config[status] || config.submitted;
+  const { icon: Icon, text, color, bg, border } = config[status] || config.submitted;
   
   return (
-    <span className={`${bg} ${color} px-3 py-1 rounded-full text-xs font-semibold flex items-center shadow-lg`}>
-      <Icon className="w-3 h-3 mr-1" />
+    <span className={`${bg} ${color} ${border} px-3 py-1.5 rounded-full text-xs font-semibold flex items-center shadow-sm border`}>
+      <Icon className="w-3 h-3 mr-1.5" />
       {text}
     </span>
   );
@@ -130,18 +170,33 @@ const ComplaintCard = ({ complaint, user, onUpdateStatus, onDelete, index }) => 
   const [showActions, setShowActions] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const actionMenuRef = useRef(null);
 
   const categories = [
-    { value: 'internet', label: 'Internet Issue', icon: Wifi, color: 'text-blue-500', bg: 'bg-blue-100' },
-    { value: 'electricity', label: 'Electricity Problem', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-100' },
-    { value: 'water', label: 'Water Issue', icon: Droplets, color: 'text-cyan-500', bg: 'bg-cyan-100' },
-    { value: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'text-gray-500', bg: 'bg-gray-100' },
-    { value: 'other', label: 'Other', icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-100' }
+    { value: 'internet', label: 'Internet Issue', icon: Wifi, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    { value: 'electricity', label: 'Electricity Problem', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    { value: 'water', label: 'Water Issue', icon: Droplets, color: 'text-cyan-500', bg: 'bg-cyan-100 dark:bg-cyan-900/30' },
+    { value: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-700' },
+    { value: 'other', label: 'Other', icon: HelpCircle, color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' }
   ];
 
   const category = categories.find(c => c.value === complaint.category) || categories[4];
   const CategoryIcon = category.icon;
   const isOwner = user?.id === complaint.user_id;
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setShowActions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <>
@@ -151,7 +206,7 @@ const ComplaintCard = ({ complaint, user, onUpdateStatus, onDelete, index }) => 
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         whileHover={{ y: -5 }}
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
       >
         <div className="p-6">
           <div className="flex items-start justify-between">
@@ -175,7 +230,7 @@ const ComplaintCard = ({ complaint, user, onUpdateStatus, onDelete, index }) => 
                   {complaint.description && complaint.description.length > 100 && (
                     <button
                       onClick={() => setShowFullDescription(!showFullDescription)}
-                      className="text-xs text-[#66b032] hover:underline flex items-center mt-1"
+                      className="text-xs text-[#66b032] hover:underline flex items-center mt-1 transition-colors"
                     >
                       {showFullDescription ? (
                         <>Show less <ChevronUp className="w-3 h-3 ml-1" /></>
@@ -187,9 +242,9 @@ const ComplaintCard = ({ complaint, user, onUpdateStatus, onDelete, index }) => 
                 </div>
 
                 {complaint.location && (
-                  <div className="flex items-center text-xs text-gray-500 mb-2">
-                    <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-                    <span className="truncate">{complaint.location}</span>
+                  <div className="flex items-center text-xs text-gray-500 mb-3 group cursor-pointer">
+                    <MapPin className="w-3 h-3 mr-1 flex-shrink-0 group-hover:text-[#66b032] transition-colors" />
+                    <span className="truncate group-hover:text-[#66b032] transition-colors">{complaint.location}</span>
                   </div>
                 )}
 
@@ -197,22 +252,34 @@ const ComplaintCard = ({ complaint, user, onUpdateStatus, onDelete, index }) => 
                   <div className="flex items-center min-w-0">
                     <User className="w-3 h-3 text-[#66b032] mr-1 flex-shrink-0" />
                     <span className="text-gray-600 dark:text-gray-400 truncate">{complaint.reporter_name}</span>
-                    {isOwner && <span className="ml-1 text-[10px] text-[#66b032] flex-shrink-0">(You)</span>}
+                    {isOwner && (
+                      <span className="ml-2 text-[10px] bg-[#66b032]/10 text-[#66b032] px-2 py-0.5 rounded-full font-medium">
+                        You
+                      </span>
+                    )}
                   </div>
-                  <span className="text-gray-500 flex-shrink-0">
+                  <span className="text-gray-500 flex-shrink-0 flex items-center">
+                    <Calendar className="w-3 h-3 mr-1" />
                     {new Date(complaint.created_at).toLocaleDateString('en-US', { 
                       month: 'short', 
-                      day: 'numeric',
-                      year: 'numeric'
+                      day: 'numeric'
                     })}
                   </span>
                 </div>
 
                 {/* Roll No and Course */}
                 {(complaint.roll_no || complaint.course) && (
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-500 mt-2">
-                    {complaint.roll_no && <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">#{complaint.roll_no}</span>}
-                    {complaint.course && <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{complaint.course}</span>}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {complaint.roll_no && (
+                      <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-600 dark:text-gray-400 font-mono">
+                        #{complaint.roll_no}
+                      </span>
+                    )}
+                    {complaint.course && (
+                      <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-600 dark:text-gray-400">
+                        {complaint.course}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -220,84 +287,56 @@ const ComplaintCard = ({ complaint, user, onUpdateStatus, onDelete, index }) => 
 
             <div className="flex flex-col items-end space-y-2 ml-4">
               <StatusBadge status={complaint.status} />
-              
-              {/* Actions Menu - Only for owner */}
-              {isOwner && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowActions(!showActions)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    <MoreVertical className="w-4 h-4 text-gray-500" />
-                  </button>
-                  
-                  <AnimatePresence>
-                    {showActions && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowActions(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl z-50"
-                        >
-                          <div className="p-2">
-                            {complaint.status === 'submitted' && (
-                              <button
-                                onClick={() => {
-                                  onUpdateStatus(complaint.id, 'in-progress');
-                                  setShowActions(false);
-                                }}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-blue-50 rounded-lg transition-colors"
-                              >
-                                <Clock className="w-4 h-4 text-blue-600" />
-                                <span className="text-sm font-medium">Mark In Progress</span>
-                              </button>
-                            )}
-                            {complaint.status === 'in-progress' && (
-                              <button
-                                onClick={() => {
-                                  onUpdateStatus(complaint.id, 'resolved');
-                                  setShowActions(false);
-                                }}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-green-50 rounded-lg transition-colors"
-                              >
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="text-sm font-medium">Mark Resolved</span>
-                              </button>
-                            )}
-                            {(complaint.status === 'submitted' || complaint.status === 'in-progress') && (
-                              <button
-                                onClick={() => {
-                                  onUpdateStatus(complaint.id, 'rejected');
-                                  setShowActions(false);
-                                }}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <XCircle className="w-4 h-4 text-red-600" />
-                                <span className="text-sm font-medium">Reject</span>
-                              </button>
-                            )}
-                            <div className="border-t border-gray-200 my-2" />
-                            <button
-                              onClick={() => {
-                                setShowActions(false);
-                                setShowDeleteModal(true);
-                              }}
-                              className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                              <span className="text-sm font-medium text-red-600">Delete</span>
-                            </button>
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Actions Bar - Moved outside and made more visible */}
+          {isOwner && (
+            <div className="mt-4 pt-4 border-t dark:border-gray-700 flex items-center justify-end space-x-2">
+              {complaint.status === 'submitted' && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onUpdateStatus(complaint.id, 'in-progress')}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Start Progress
+                </motion.button>
+              )}
+              {complaint.status === 'in-progress' && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onUpdateStatus(complaint.id, 'resolved')}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-green-500/30 transition-all flex items-center"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Mark Resolved
+                </motion.button>
+              )}
+              {(complaint.status === 'submitted' || complaint.status === 'in-progress') && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onUpdateStatus(complaint.id, 'rejected')}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-red-500/30 transition-all flex items-center"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Reject
+                </motion.button>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all flex items-center"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </motion.button>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -324,28 +363,70 @@ const ComplaintForm = ({ onSubmit, onCancel, user }) => {
     roll_no: user?.roll_no || user?.rollNo || '',
     course: user?.course || ''
   });
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const categories = [
-    { value: 'internet', label: 'Internet Issue', icon: Wifi },
-    { value: 'electricity', label: 'Electricity Problem', icon: Zap },
-    { value: 'water', label: 'Water Issue', icon: Droplets },
-    { value: 'maintenance', label: 'Maintenance', icon: Wrench },
-    { value: 'other', label: 'Other', icon: AlertCircle }
+    { value: 'internet', label: 'Internet Issue', icon: Wifi, description: 'Slow speed, connection drops, no internet' },
+    { value: 'electricity', label: 'Electricity Problem', icon: Zap, description: 'Power outage, voltage fluctuation, tripping' },
+    { value: 'water', label: 'Water Issue', icon: Droplets, description: 'No water, leakage, dirty water' },
+    { value: 'maintenance', label: 'Maintenance', icon: Wrench, description: 'Repairs, cleaning, furniture issues' },
+    { value: 'other', label: 'Other', icon: HelpCircle, description: 'Any other type of complaint' }
   ];
+
+  const validateStep = (step) => {
+    const newErrors = {};
+    
+    if (step === 1) {
+      if (!formData.category) newErrors.category = 'Please select a category';
+      if (!formData.priority) newErrors.priority = 'Please select priority level';
+    }
+    
+    if (step === 2) {
+      if (!formData.location?.trim()) newErrors.location = 'Location is required';
+      if (!formData.description?.trim()) newErrors.description = 'Description is required';
+      else if (formData.description.length < 10) newErrors.description = 'Description must be at least 10 characters';
+    }
+    
+    if (step === 3) {
+      if (!formData.reporter_name?.trim()) newErrors.reporter_name = 'Name is required';
+      if (!formData.reporter_contact?.trim()) newErrors.reporter_contact = 'Contact info is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      toast.error('Please fill in all required fields correctly');
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(currentStep - 1);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.description || !formData.location) {
-      toast.error('Please fill in all required fields');
-      return;
+    if (validateStep(3) && validateStep(2) && validateStep(1)) {
+      setSubmitting(true);
+      await onSubmit(formData);
+      setSubmitting(false);
+    } else {
+      toast.error('Please fill in all required fields correctly');
     }
-
-    setSubmitting(true);
-    await onSubmit(formData);
-    setSubmitting(false);
   };
+
+  const steps = [
+    { number: 1, title: 'Category', icon: '📋' },
+    { number: 2, title: 'Details', icon: '📝' },
+    { number: 3, title: 'Contact', icon: '📞' }
+  ];
 
   return (
     <motion.div
@@ -354,9 +435,12 @@ const ComplaintForm = ({ onSubmit, onCancel, user }) => {
       exit={{ opacity: 0, y: -20 }}
       className="mb-8"
     >
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Submit New Complaint</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Submit New Complaint</h2>
+            <p className="text-sm text-gray-500 mt-1">Help us improve your campus experience</p>
+          </div>
           <button 
             onClick={onCancel} 
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -366,88 +450,265 @@ const ComplaintForm = ({ onSubmit, onCancel, user }) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Category *</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-[#66b032] transition-all"
-                required
-                disabled={submitting}
-              >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Priority *</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-[#66b032] transition-all"
-                required
-                disabled={submitting}
-              >
-                <option value="low">🟢 Low</option>
-                <option value="medium">🟡 Medium</option>
-                <option value="high">🔴 High</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Location *</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-[#66b032] transition-all"
-              placeholder="e.g., Room 201, Lab 3, Cafeteria"
-              required
-              disabled={submitting}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Description *</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-[#66b032] transition-all"
-              rows="3"
-              placeholder="Describe the issue in detail..."
-              required
-              disabled={submitting}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-            <button 
-              type="submit" 
-              disabled={submitting}
-              className="flex-1 py-3 bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {submitting ? (
-                <>
-                  <Loader className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Complaint'
+        {/* Progress Steps */}
+        <div className="flex items-center justify-between mb-8">
+          {steps.map((step) => (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="relative">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  currentStep >= step.number 
+                    ? 'bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white shadow-lg' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                }`}>
+                  <span>{step.icon}</span>
+                </div>
+                <p className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs whitespace-nowrap text-gray-600 dark:text-gray-400">
+                  {step.title}
+                </p>
+              </div>
+              {step.number < steps.length && (
+                <div className={`flex-1 h-1 mx-2 ${
+                  currentStep > step.number 
+                    ? 'bg-gradient-to-r from-[#66b032] to-[#0057a8]' 
+                    : 'bg-gray-200 dark:bg-gray-700'
+                }`} />
               )}
-            </button>
-            <button 
-              type="button" 
-              onClick={onCancel} 
-              disabled={submitting}
-              className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all disabled:opacity-50"
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Step 1: Category & Priority */}
+          {currentStep === 1 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4"
             >
-              Cancel
-            </button>
+              <div>
+                <label className="block text-sm font-medium mb-3">Category *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {categories.map((cat) => {
+                    const Icon = cat.icon;
+                    const isSelected = formData.category === cat.value;
+                    return (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, category: cat.value });
+                          setErrors({ ...errors, category: null });
+                        }}
+                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                          isSelected
+                            ? 'border-[#66b032] bg-[#66b032]/5 dark:bg-[#66b032]/10'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-[#66b032]/50'
+                        } ${errors.category ? 'border-red-500' : ''}`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${isSelected ? 'bg-[#66b032] text-white' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{cat.label}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">{cat.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-3">Priority Level *</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {['low', 'medium', 'high'].map((priority) => (
+                    <button
+                      key={priority}
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, priority });
+                        setErrors({ ...errors, priority: null });
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all capitalize ${
+                        formData.priority === priority
+                          ? priority === 'low' ? 'border-green-500 bg-green-50 dark:bg-green-900/20' :
+                            priority === 'medium' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' :
+                            'border-red-500 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-2xl mb-1 block">
+                        {priority === 'low' ? '🟢' : priority === 'medium' ? '🟡' : '🔴'}
+                      </span>
+                      <span className="text-sm font-medium capitalize">{priority}</span>
+                    </button>
+                  ))}
+                </div>
+                {errors.priority && <p className="text-xs text-red-500 mt-1">{errors.priority}</p>}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Location & Description */}
+          {currentStep === 2 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium mb-2">Location *</label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => {
+                    setFormData({ ...formData, location: e.target.value });
+                    setErrors({ ...errors, location: null });
+                  }}
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all ${
+                    errors.location ? 'border-red-500' : ''
+                  }`}
+                  placeholder="e.g., Room 201, Lab 3, Cafeteria, Building A"
+                  disabled={submitting}
+                />
+                {errors.location && <p className="text-xs text-red-500 mt-1">{errors.location}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Description *</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => {
+                    setFormData({ ...formData, description: e.target.value });
+                    setErrors({ ...errors, description: null });
+                  }}
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all ${
+                    errors.description ? 'border-red-500' : ''
+                  }`}
+                  rows="4"
+                  placeholder="Please provide detailed description of the issue..."
+                  disabled={submitting}
+                />
+                {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.description.length} / 10 minimum characters
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Contact Info */}
+          {currentStep === 3 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium mb-2">Your Name *</label>
+                <input
+                  type="text"
+                  value={formData.reporter_name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, reporter_name: e.target.value });
+                    setErrors({ ...errors, reporter_name: null });
+                  }}
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all ${
+                    errors.reporter_name ? 'border-red-500' : ''
+                  }`}
+                  disabled={submitting}
+                />
+                {errors.reporter_name && <p className="text-xs text-red-500 mt-1">{errors.reporter_name}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Contact Info *</label>
+                <input
+                  type="text"
+                  value={formData.reporter_contact}
+                  onChange={(e) => {
+                    setFormData({ ...formData, reporter_contact: e.target.value });
+                    setErrors({ ...errors, reporter_contact: null });
+                  }}
+                  className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all ${
+                    errors.reporter_contact ? 'border-red-500' : ''
+                  }`}
+                  placeholder="Phone number or email"
+                  disabled={submitting}
+                />
+                {errors.reporter_contact && <p className="text-xs text-red-500 mt-1">{errors.reporter_contact}</p>}
+                <p className="text-xs text-gray-500 mt-1">This will be visible to admins to contact you</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Roll No (Optional)</label>
+                  <input
+                    type="text"
+                    value={formData.roll_no}
+                    onChange={(e) => setFormData({ ...formData, roll_no: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all"
+                    placeholder="e.g., CS-2024-001"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Course (Optional)</label>
+                  <input
+                    type="text"
+                    value={formData.course}
+                    onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all"
+                    placeholder="e.g., Computer Science"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between pt-6 border-t dark:border-gray-700">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={handlePreviousStep}
+                className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Previous
+              </button>
+            )}
+            
+            {currentStep < 3 ? (
+              <button
+                type="button"
+                onClick={handleNextStep}
+                className="ml-auto px-6 py-3 bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white rounded-xl font-medium hover:shadow-lg transition-all"
+              >
+                Next Step
+              </button>
+            ) : (
+              <button 
+                type="submit" 
+                disabled={submitting}
+                className="ml-auto px-8 py-3 bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {submitting ? (
+                  <>
+                    <Loader className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Complaint'
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -464,31 +725,35 @@ const Complaints = () => {
   const [filter, setFilter] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('newest');
 
-  // Load complaints from Supabase
+  // Load complaints from localStorage
   useEffect(() => {
     loadComplaints();
   }, []);
 
-  const loadComplaints = async () => {
+  const loadComplaints = () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('complaints')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading complaints:', error);
-        toast.error('Failed to load complaints');
-      } else {
-        setComplaints(data || []);
+      const savedComplaints = localStorage.getItem('complaints');
+      if (savedComplaints) {
+        setComplaints(JSON.parse(savedComplaints));
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error loading complaints:', error);
       toast.error('Failed to load complaints');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveComplaints = (newComplaints) => {
+    try {
+      localStorage.setItem('complaints', JSON.stringify(newComplaints));
+      setComplaints(newComplaints);
+    } catch (error) {
+      console.error('Error saving complaints:', error);
+      toast.error('Failed to save complaint');
     }
   };
 
@@ -500,31 +765,16 @@ const Complaints = () => {
       }
 
       const newComplaint = {
-        category: formData.category,
-        description: formData.description,
-        location: formData.location,
-        priority: formData.priority,
+        id: Date.now().toString(),
+        ...formData,
         status: 'submitted',
-        reporter_name: formData.reporter_name,
-        reporter_contact: formData.reporter_contact,
-        roll_no: formData.roll_no,
-        course: formData.course,
         user_id: user?.id,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
-        .from('complaints')
-        .insert([newComplaint])
-        .select();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        toast.error(`Error: ${error.message}`);
-        return;
-      }
-
-      setComplaints([data[0], ...complaints]);
+      const updatedComplaints = [newComplaint, ...complaints];
+      saveComplaints(updatedComplaints);
       setShowForm(false);
       toast.success('Complaint submitted successfully!');
       
@@ -534,36 +784,27 @@ const Complaints = () => {
     }
   };
 
-  const updateStatus = async (id, newStatus) => {
+  const updateStatus = (id, newStatus) => {
     try {
-      const { error } = await supabase
-        .from('complaints')
-        .update({ status: newStatus })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setComplaints(complaints.map(complaint => 
-        complaint.id === id ? { ...complaint, status: newStatus } : complaint
-      ));
-      
-      toast.success(`Status updated to ${newStatus}`);
+      const updatedComplaints = complaints.map(complaint => 
+        complaint.id === id ? { 
+          ...complaint, 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        } : complaint
+      );
+      saveComplaints(updatedComplaints);
+      toast.success(`Status updated to ${newStatus.replace('-', ' ')}`);
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     try {
-      const { error } = await supabase
-        .from('complaints')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setComplaints(complaints.filter(complaint => complaint.id !== id));
+      const updatedComplaints = complaints.filter(complaint => complaint.id !== id);
+      saveComplaints(updatedComplaints);
       toast.success('Complaint deleted successfully');
     } catch (error) {
       console.error('Error deleting complaint:', error);
@@ -571,67 +812,102 @@ const Complaints = () => {
     }
   };
 
-  // Filter complaints
-  const filteredComplaints = complaints.filter(complaint => {
-    const matchesSearch = complaint.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.reporter_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (filter === 'all') return matchesSearch;
-    if (filter === 'submitted') return matchesSearch && complaint.status === 'submitted';
-    if (filter === 'in-progress') return matchesSearch && complaint.status === 'in-progress';
-    if (filter === 'resolved') return matchesSearch && complaint.status === 'resolved';
-    if (filter === 'rejected') return matchesSearch && complaint.status === 'rejected';
-    if (filter === 'high') return matchesSearch && complaint.priority === 'high';
-    return matchesSearch;
-  });
+  // Filter and sort complaints
+  const filteredComplaints = complaints
+    .filter(complaint => {
+      const matchesSearch = complaint.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           complaint.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           complaint.reporter_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           complaint.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (filter === 'all') return matchesSearch;
+      if (filter === 'submitted') return matchesSearch && complaint.status === 'submitted';
+      if (filter === 'in-progress') return matchesSearch && complaint.status === 'in-progress';
+      if (filter === 'resolved') return matchesSearch && complaint.status === 'resolved';
+      if (filter === 'rejected') return matchesSearch && complaint.status === 'rejected';
+      if (filter === 'high') return matchesSearch && complaint.priority === 'high';
+      if (filter === 'my') return matchesSearch && complaint.user_id === user?.id;
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'newest') {
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+      return new Date(a.created_at) - new Date(b.created_at);
+    });
 
   // Stats
   const totalComplaints = complaints.length;
   const submittedCount = complaints.filter(i => i.status === 'submitted').length;
   const inProgressCount = complaints.filter(i => i.status === 'in-progress').length;
   const resolvedCount = complaints.filter(i => i.status === 'resolved').length;
+  const myComplaints = complaints.filter(i => i.user_id === user?.id).length;
 
   return (
     <Layout>
-      <div className="space-y-4 md:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Complaints</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Report issues and track their resolution</p>
-          </div>
+      <div className="space-y-6">
+        {/* Header with Gradient */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#66b032] to-[#0057a8] p-8 text-white">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-24 -translate-x-24" />
           
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{showForm ? 'Cancel' : 'New Complaint'}</span>
-          </button>
+          <div className="relative">
+            <h1 className="text-3xl font-bold mb-2">Complaints Portal</h1>
+            <p className="text-white/90 max-w-2xl">
+              Report issues and track their resolution. We're here to help make your campus experience better.
+            </p>
+            
+            <div className="flex flex-wrap gap-4 mt-6">
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-2xl font-bold">{totalComplaints}</p>
+                <p className="text-xs text-white/80">Total Complaints</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-2xl font-bold">{submittedCount}</p>
+                <p className="text-xs text-white/80">Submitted</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-2xl font-bold">{inProgressCount}</p>
+                <p className="text-xs text-white/80">In Progress</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-2xl font-bold">{resolvedCount}</p>
+                <p className="text-xs text-white/80">Resolved</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                <p className="text-2xl font-bold">{myComplaints}</p>
+                <p className="text-xs text-white/80">My Complaints</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 md:p-4 text-center">
-            <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-[#66b032] mx-auto mb-1 md:mb-2" />
-            <p className="text-lg md:text-2xl font-bold text-[#66b032]">{totalComplaints}</p>
-            <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">Total Complaints</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 md:p-4 text-center">
-            <Clock className="w-5 h-5 md:w-6 md:h-6 text-yellow-500 mx-auto mb-1 md:mb-2" />
-            <p className="text-lg md:text-2xl font-bold text-yellow-500">{submittedCount}</p>
-            <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">Submitted</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 md:p-4 text-center">
-            <Clock className="w-5 h-5 md:w-6 md:h-6 text-blue-500 mx-auto mb-1 md:mb-2" />
-            <p className="text-lg md:text-2xl font-bold text-blue-500">{inProgressCount}</p>
-            <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">In Progress</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 md:p-4 text-center">
-            <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-500 mx-auto mb-1 md:mb-2" />
-            <p className="text-lg md:text-2xl font-bold text-green-500">{resolvedCount}</p>
-            <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">Resolved</p>
+        {/* Action Bar */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-6 py-3 bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white rounded-xl hover:shadow-lg transition-all flex items-center justify-center space-x-2 group"
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            <span>{showForm ? 'Cancel' : 'New Complaint'}</span>
+          </button>
+
+          <div className="flex gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-2 bg-white dark:bg-gray-800 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+
+            <button
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              className="px-4 py-2 bg-white dark:bg-gray-800 border rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+            >
+              {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
@@ -650,44 +926,37 @@ const Complaints = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search complaints by description, location..."
+                placeholder="Search complaints by description, location, category..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 md:pl-10 pr-4 py-2 text-sm md:text-base bg-gray-50 dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-[#66b032] transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all"
               />
             </div>
             
-            <div className="flex gap-2">
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="flex-1 sm:flex-none px-3 md:px-4 py-2 text-sm bg-gray-50 dark:bg-gray-700 border rounded-lg focus:ring-2 focus:ring-[#66b032] transition-all"
-              >
-                <option value="all">All Complaints</option>
-                <option value="submitted">Submitted</option>
-                <option value="in-progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="rejected">Rejected</option>
-                <option value="high">High Priority</option>
-              </select>
-
-              <button
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className="px-3 md:px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all"
-              >
-                {viewMode === 'grid' ? <List className="w-4 h-4 md:w-5 md:h-5" /> : <Grid className="w-4 h-4 md:w-5 md:h-5" />}
-              </button>
-            </div>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border rounded-xl focus:ring-2 focus:ring-[#66b032] transition-all"
+            >
+              <option value="all">All Complaints</option>
+              <option value="submitted">Submitted</option>
+              <option value="in-progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="rejected">Rejected</option>
+              <option value="high">High Priority</option>
+              <option value="my">My Complaints</option>
+            </select>
           </div>
         </div>
 
         {/* Complaints Grid */}
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="w-10 h-10 md:w-12 md:h-12 border-4 border-[#66b032] border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 border-4 border-[#66b032] border-t-transparent rounded-full animate-spin" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading complaints...</p>
           </div>
         ) : (
           <AnimatePresence>
@@ -698,7 +967,7 @@ const Complaints = () => {
                   viewMode === 'grid' 
                     ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-2' 
                     : 'grid-cols-1'
-                } gap-4 md:gap-6`}
+                } gap-6`}
               >
                 {filteredComplaints.map((complaint, index) => (
                   <ComplaintCard
@@ -713,15 +982,28 @@ const Complaints = () => {
               </motion.div>
             ) : (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-8 md:py-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-lg"
               >
-                <AlertCircle className="w-12 h-12 md:w-16 md:h-16 text-gray-400 mx-auto mb-3 md:mb-4" />
-                <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-2">No complaints found</h3>
-                <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-                  {searchTerm ? 'Try adjusting your search' : 'Be the first to submit a complaint'}
-                </p>
+                <div className="max-w-md mx-auto">
+                  <Package className="w-20 h-20 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">No complaints found</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {searchTerm || filter !== 'all' 
+                      ? 'Try adjusting your search or filters'
+                      : 'Be the first to submit a complaint'}
+                  </p>
+                  {!showForm && (
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-[#66b032] to-[#0057a8] text-white rounded-xl hover:shadow-lg transition-all inline-flex items-center"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Submit Complaint
+                    </button>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

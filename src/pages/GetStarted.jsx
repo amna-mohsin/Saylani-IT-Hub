@@ -11,9 +11,18 @@ const GetStarted = () => {
     <div className="min-h-screen bg-gradient-to-br from-saylani-green via-white to-saylani-blue dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Navigation */}
       <nav className="flex justify-between items-center p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-        <div className="flex items-center space-x-2">
-          <img src="/icons/logo.svg" alt="Saylani Logo" className="h-10 w-10" />
-          <span className="text-xl font-bold text-gray-800 dark:text-white">Saylani Mass IT Hub</span>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full border-2 border-blue-500 bg-white overflow-hidden shadow-sm">
+            <img
+              src="/icons/favicon.png"
+              alt="Saylani Logo"
+              className="h-10 w-10 object-contain p-1"
+            />
+          </div>
+
+          <span className="text-xl font-bold text-gray-800 dark:text-white">
+            Saylani Mass IT Hub
+          </span>
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -28,7 +37,7 @@ const GetStarted = () => {
       </nav>
 
       {/* Hero Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
@@ -41,10 +50,10 @@ const GetStarted = () => {
             <span className="text-saylani-blue">Mass IT Hub</span>
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
-            Your comprehensive campus management portal for students and staff. 
+            Your comprehensive campus management portal for students and staff.
             Report issues, find lost items, volunteer for events, and more.
           </p>
-          
+
           <div className="flex justify-center space-x-4 mb-16">
             <Link to="/signup" className="btn-primary text-lg px-8 py-3 flex items-center">
               Get Started <ArrowRight className="ml-2 w-5 h-5" />
@@ -56,7 +65,7 @@ const GetStarted = () => {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-8 mt-20">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl"
             >
@@ -69,7 +78,7 @@ const GetStarted = () => {
               </p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl"
             >
@@ -82,7 +91,7 @@ const GetStarted = () => {
               </p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl"
             >

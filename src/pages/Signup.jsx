@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Eye, EyeOff, User, Mail, Lock, Hash, BookOpen, 
+import {
+  Eye, EyeOff, User, Mail, Lock, Hash, BookOpen,
   Sun, Moon, ArrowRight, Shield, Phone, Award, ShieldCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -35,7 +35,7 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
       return;
@@ -44,7 +44,7 @@ const Signup = () => {
     setLoading(true);
     const success = await signup(formData);
     setLoading(false);
-    
+
     if (success) {
       navigate('/dashboard');
     }
@@ -83,7 +83,7 @@ const Signup = () => {
       </motion.button>
 
       {/* Main Container */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-6xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden"
@@ -116,7 +116,13 @@ const Signup = () => {
                 transition={{ delay: 0.2 }}
                 className="flex items-center space-x-3 mb-8"
               >
-                <img src="/icons/logo.svg" alt="Saylani" className="w-12 h-12 invert" />
+                <div className="flex items-center justify-center w-16 h-16 rounded-full border-2 border-white/30 bg-white shadow-xl overflow-hidden">
+                  <img
+                    src="/icons/favicon.png"
+                    alt="Saylani"
+                    className="w-12 h-12 object-contain p-1"
+                  />
+                </div>
                 <span className="text-white font-bold text-xl">Saylani Portal</span>
               </motion.div>
 
@@ -356,9 +362,9 @@ const Signup = () => {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
-                    id="terms" 
+                  <input
+                    type="checkbox"
+                    id="terms"
                     className="rounded border-gray-300 text-saylani-green focus:ring-saylani-green"
                     required
                   />
